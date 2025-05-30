@@ -1,0 +1,44 @@
+# === Configuración del chart generic-verifier ===
+name: verifier
+namespace: andres
+containerPort: 2904
+domain: example.dev.io
+replicas: 1
+
+service:
+  agent: http://verifier-agent:3000
+  credentialTypes: credential-type-id
+  issuerDid: did:web:unic-id-issuer.demos.dev.2060.io
+  issuerLabel: test-issuer
+  issuerImageUrl: https://i.unic-id-issuer.demos.dev.2060.io/avatar.png
+
+images:
+  verifier:
+    repository: io2060/generic-verifier
+    tag: v0.0.3
+
+vs-agent:
+  vsAgentName: verifier-agent
+  vsAgentNamespace: andres
+  vsAgentReplicas: 1
+  vsAgentDomain: example.dev.io
+  agentName: test-verifier-agent
+  eventsBaseUrl: https://verifier.example.dev.io
+  adminPort: 3000
+  agentPort: 3001
+  ingress:
+    public:
+      enableCors: true
+
+  images:
+    agent:
+      repository: io2060/2060-service-agent
+      tag: v1.2.0
+    invitationUrl: https://i.unic-id-issuer.demos.dev.2060.io/avatar.png
+
+  extraEnv: 
+    - name: PUBLIC_API_BASE_URL
+      value: https://a.verifier-agent.example.dev.io
+    - name: USE_CORS
+      value: "true"
+

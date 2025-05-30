@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
 
       - name: Process Release Please
         uses: googleapis/release-please-action@v4
@@ -54,4 +57,19 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_LOGIN }}/${{ env.IMAGE_NAME }}:dev,
             ${{ secrets.DOCKER_HUB_LOGIN }}/${{ env.IMAGE_NAME }}:${{ steps.release-please.outputs.tag_name }}
+
+      - name: Log in to Docker Hub Helm Registry
+        if: ${{ steps.release-please.outputs.releases_created == 'true' }}
+        run: |
+          echo "${{ secrets.DOCKER_HUB_PWD }}" | helm registry login -u "${{ secrets.DOCKER_HUB_LOGIN }}" --password-stdin docker.io
+
+      - name: Push Helm chart to Docker Hub OCI repo
+        if: ${{ steps.release-please.outputs.releases_created == 'true' }}
+        env:
+          IMAGE_TAG: ${{ steps.release-please.outputs.tag_name }}
+        run: |
+          sed -i "s/^version:.*/version: $IMAGE_TAG/" ./charts/Chart.yaml
+          helm dependency update ./charts
+          helm package ./charts -d ./charts
+          helm push ./charts/$IMAGE_NAME-$IMAGE_TAG.tgz oci://docker.io/"${{ secrets.DOCKER_HUB_LOGIN }}"
       
